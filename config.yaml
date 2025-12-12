@@ -1,5 +1,5 @@
 signal_generation:
-  srate: 250          # Sampling rate in Hz
+  srate: 2500         # Sampling rate in Hz
   duration: 6         # Seconds per trial
   n_trials: 20        # Total trials
   channels: ['C3', 'C4'] # C3 (Left Motor Cortex), C4 (Right Motor Cortex)

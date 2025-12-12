@@ -36,7 +36,7 @@ def get_motor_envelope(n_samples, srate, event_time=2.5):
     
     return envelope
 
-def simulate_trial(duration, srate, trial_type, noise_level=5.0):
+def simulate_trial(duration, srate, trial_type, noise_level=3.0):
     
     n_samples = int(duration * srate)
     t = np.linspace(0, duration, n_samples)

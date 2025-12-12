@@ -4,8 +4,10 @@ import numpy as np
 def compute_band_power(signal, srate, bands):
     
     # STFT parameters
-    nperseg = int(0.5 * srate) # 500ms window
-    f, t, Zxx = stft(signal, fs=srate, nperseg=nperseg)
+    window_sec = 0.5
+    nperseg = int(window_sec * srate)
+    noverlap = int (nperseg * 0.8)
+    f, t, Zxx = stft(signal, fs=srate, nperseg=nperseg, noverlap=noverlap)
     
     # Calculating power from complex voltage
     power = np.abs(Zxx)**2
