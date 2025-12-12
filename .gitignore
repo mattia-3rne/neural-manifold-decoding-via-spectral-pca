@@ -217,3 +217,8 @@ data/03_results/*
 !data/01_raw/.gitkeep
 !data/02_features/.gitkeep
 !data/03_results/.gitkeep
+
+# Ignoring python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
