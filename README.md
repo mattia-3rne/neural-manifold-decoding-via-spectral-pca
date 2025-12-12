@@ -6,7 +6,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange.svg)](https://jupyter.org/)
 
-## 📌 Overview
+## Overview
 
 This project demonstrates the extraction of **Neural Manifolds**—low-dimensional topological subspaces where neural population activity evolves—from noisy, high-dimensional EEG data.
 
@@ -14,7 +14,7 @@ Neural field potentials are dominated by **1/f background noise** (pink noise), 
 
 ---
 
-## 🧠 Neuroscience Background
+## Neuroscience Background
 
 The simulation is grounded in established neurophysiology of the mammalian motor cortex.
 
@@ -36,9 +36,9 @@ The brain controls the body cross-wise.
 
 ---
 
-## 🧮 Mathematical Framework & Data Science Techniques
+## Mathematical Framework
 
-### 1. Signal Generation (The Physics)
+### 1. Signal Generation
 We model the raw voltage $V(t)$ for a given channel as a superposition of stochastic noise and deterministic oscillatory signals modulated by a task envelope.
 
 $$V(t) = N_{pink}(t) + A(t) \cdot \sin(2\pi f_{\alpha} t) + B(t) \cdot \sin(2\pi f_{\beta} t) + \epsilon(t)$$
@@ -48,7 +48,7 @@ Where:
 * $A(t), B(t)$: Time-varying envelopes representing the cognitive state (Rest $\to$ ERD $\to$ ERS).
 * $\epsilon(t)$: Sensor white noise.
 
-### 2. Spectral Analysis (STFT)
+### 2. Spectral Analysis via STFT
 Since the signal is **non-stationary** (the frequency content changes over time), simple Fourier Transform (DFT) is insufficient. We use the **Short-Time Fourier Transform (STFT)** to map voltage to the time-frequency domain.
 
 For a discrete signal $x[n]$ and window $w[n]$:
@@ -57,12 +57,12 @@ $$X(m, \omega) = \sum_{n=-\infty}^{\infty} x[n] w[n-mR] e^{-j\omega n}$$
 
 This transforms our data dimensions from Time to Time-Frequency.
 
-### 3. Feature Engineering (Band Power)
+### 3. Feature Engineering
 We integrate the power spectral density (PSD) over specific neurophysiologically relevant bands to create features. For a band $b \in [\omega_{low}, \omega_{high}]$:
 
 $$P_b[m] = \frac{1}{N_{bins}} \sum_{\omega=\omega_{low}}^{\omega_{high}} |X(m, \omega)|^2$$
 
-### 4. Standardization (Z-Scoring)
+### 4. Standardization via Z-Scoring
 This is the **critical step**. EEG data follows a power law ($P \propto 1/f$), meaning Delta band variance ($\sigma^2_{\delta}$) is orders of magnitude larger than Beta band variance ($\sigma^2_{\beta}$).
 If we applied PCA directly, PC1 would purely capture the random Delta drift.
 
@@ -70,7 +70,7 @@ We standardize every feature column $j$:
 $$Z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}$$
 This forces $\sigma^2 = 1$ for all bands, converting the PCA problem from analyzing the **Covariance Matrix** (amplitude-driven) to the **Correlation Matrix** (synchrony-driven).
 
-### 5. Dimensionality Reduction (PCA)
+### 5. Dimensionality Reduction via PCA
 We use Principal Component Analysis to find the neural manifold. PCA finds the eigenvectors (principal components) of the correlation matrix $C = Z^T Z$.
 
 $$C = V \Lambda V^T$$
@@ -81,7 +81,7 @@ $$C = V \Lambda V^T$$
 
 ---
 
-## 📊 Pipeline & Data Dimensions
+## Pipeline & Data Dimensions
 
 The data undergoes a sequence of transformations, reshaping the tensor at each step.
 
@@ -92,7 +92,7 @@ We simulate 20 trials (10 Left, 10 Right) of 6 seconds each at 250 Hz.
     $$X_{raw} \in \mathbb{R}^{N_{trials} \times N_{channels} \times N_{time}}$$
     $$\text{Dimensions: } (20 \times 2 \times 1500)$$
 
-### Step 2: Spectral Feature Extraction
+### Step 2: Spectral Analysis
 We compute the STFT and average into 5 bands ($\delta, \theta, \alpha, \beta, \gamma$) per channel.
 * **Transformation:** Voltage ($V$) $\rightarrow$ Power ($dB$).
 * **Intermediate Tensor:**
@@ -102,7 +102,7 @@ We compute the STFT and average into 5 bands ($\delta, \theta, \alpha, \beta, \g
     $$X_{flat} \in \mathbb{R}^{N_{trials} \times N_{windows} \times N_{features}}$$
     $$\text{Dimensions: } (20 \times 60 \times 10)$$
 
-### Step 3: Manifold Learning (PCA)
+### Step 3: Manifold Decoding
 We stack all trials vertically to treat every time window as an independent observation of the brain state.
 * **Stacked Matrix:**
     $$X_{stacked} \in \mathbb{R}^{N_{total\_samples} \times N_{features}}$$
@@ -113,9 +113,9 @@ We stack all trials vertically to treat every time window as an independent obse
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-### 📓 Notebooks (Analysis Pipeline)
+### Notebooks
 * **`notebooks/01_signal_generation.ipynb`**:
     * *Goal*: Generates the synthetic dataset (20 trials, 2 channels).
     * *Details*: Implements the random walk (Brownian noise) for Delta bands and the ERD envelopes for Alpha/Beta.
@@ -126,24 +126,24 @@ We stack all trials vertically to treat every time window as an independent obse
     * *Goal*: Applies Z-scoring and PCA to uncover latent dynamics.
     * *Details*: Visualizes the 3D manifold, the covariance matrix, and the PCA loading vectors to validate the "Signal vs. Noise" separation.
 
-### 🛠 Source Code
+### Source Code
 * **`src/generation.py`**:
     * Contains the physics engine for generating pink noise, artifacts, and motor-task modulation envelopes.
 * **`src/processing.py`**:
     * Utility functions for signal processing, including STFT computation and band-power averaging.
 
-### 💾 Data Directory
+### Data Directory
 * `data/01_raw/`: Stores generated raw voltage time-series (`.npy`).
 * `data/02_features/`: Stores processed spectral feature matrices (`.npy`).
 * `data/03_results/`: Stores final PCA coordinates and manifold plots.
 
-### ⚙️ Configuration
+### Configuration
 * `config.yaml`: Central configuration file for simulation parameters.
 * `requirements.txt`: List of Python dependencies.
 
 ---
 
-## 🚀 Installation
+## Getting Started
 
 ### Prerequisites
 * Python 3.8+
