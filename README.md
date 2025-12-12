@@ -1,1 +1,1 @@
-# neural-manifold-decoding-via-spectral-pca
+# Neural Manifold Decoding from Synthetic EEG Data via Spectral PCA
