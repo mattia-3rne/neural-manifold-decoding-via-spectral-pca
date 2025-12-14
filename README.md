@@ -1,11 +1,5 @@
 # Neural Manifold Decoding from Synthetic EEG Data via Spectral PCA
 
-**A computational neuroscience pipeline to simulate non-stationary field potentials and recover latent low-dimensional dynamics.**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange.svg)](https://jupyter.org/)
-
 ## 1. Abstract
 This project implements a complete data science pipeline to extract a low-dimensional topological subspace, known as a **Neural Manifold**, from noisy, high-dimensional electrophysiological data. By simulating the **Event-Related Desynchronization (ERD)** and **Synchronization (ERS)** characteristic of the motor cortex, we demonstrate that standardizing spectral features via Z-scoring, enables Principal Component Analysis (PCA) to recover latent dynamics, effectively separating signal covariance from the dominant $1/f$ background noise.
 
@@ -71,29 +65,23 @@ Where $\mu_j$ and $\sigma_j$ are the mean and standard deviation of the $j$-th f
 ### 3.4 Dimensionality Reduction
 We identify the Neural Manifold using **Principal Component Analysis (PCA)** on the standardized features.
 
-1.  **Correlation Matrix**: We compute the covariance matrix of the standardized data $\mathbf{Z}$, which is equivalent to the correlation matrix of the original data $\mathbf{X}$:
+**Correlation Matrix**: We compute the covariance matrix of the standardized data $\mathbf{Z}$, which is equivalent to the correlation matrix of the original data $\mathbf{X}$:
 
 $$
 \mathbf{C} = \frac{1}{N-1} \mathbf{Z}^\top \mathbf{Z} \in \mathbb{R}^{F \times F}
 $$
 
-2.  **Eigendecomposition**: We solve for the eigenvalues $\lambda$ and eigenvectors $\mathbf{v}$:
+**Eigendecomposition**: We solve for the eigenvalues $\lambda$ and eigenvectors $\mathbf{v}$:
 
-$$
-\mathbf{C} \mathbf{v}_k = \lambda_k \mathbf{v}_k
-$$
+$$\mathbf{C} \mathbf{v}_k = \lambda_k \mathbf{v}_k$$
 
-    Here, the eigenvectors $\mathbf{V} = [\mathbf{v}_1, \dots, \mathbf{v}_F]$ represent the **principal axes** of the neural manifold, and the eigenvalues $\lambda_k$ represent the variance explained by each axis.
+Here, the eigenvectors $\mathbf{V} = [\mathbf{v}_1, \dots, \mathbf{v}_F]$ represent the **principal axes** of the neural manifold, and the eigenvalues $\lambda_k$ represent the variance explained by each axis.
 
-3.  **Projection**: The low-dimensional neural trajectory $\mathbf{T}$ is obtained by projecting the standardized data onto the top $d$ principal components:
+**Projection**: The low-dimensional neural trajectory $\mathbf{T}$ is obtained by projecting the standardized data onto the top $d$ principal components:
 
-$$
-\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d
-$$
+$$\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d$$
 
-$$
-\begin{bmatrix} t_{1,1} & \dots & t_{1,d} \\ \vdots & \ddots & \vdots \\ t_{N,1} & \dots & t_{N,d} \end{bmatrix} = \begin{bmatrix} z_{1,1} & \dots & z_{1,F} \\ \vdots & \ddots & \vdots \\ z_{N,1} & \dots & z_{N,F} \end{bmatrix} \cdot \begin{bmatrix} | & & | \\ \mathbf{v}_1 & \dots & \mathbf{v}_d \\ | & & | \end{bmatrix}
-$$
+$$\begin{bmatrix} t_{1,1} & \dots & t_{1,d} \\ \vdots & \ddots & \vdots \\ t_{N,1} & \dots & t_{N,d} \end{bmatrix} = \begin{bmatrix} z_{1,1} & \dots & z_{1,F} \\ \vdots & \ddots & \vdots \\ z_{N,1} & \dots & z_{N,F} \end{bmatrix} \cdot \begin{bmatrix} | & & | \\ \mathbf{v}_1 & \dots & \mathbf{v}_d \\ | & & | \end{bmatrix}$$
 
 
 ---
