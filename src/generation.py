@@ -20,19 +20,24 @@ def generate_pink_noise(n_samples):
     return pink_noise - np.mean(pink_noise)
 
 def get_motor_envelope(n_samples, srate, event_time=2.5):
-    
     t = np.linspace(0, n_samples/srate, n_samples)
     
     # Resting state
     envelope = np.ones_like(t)
     
-    # Event-Related Desynchronization
-    center = event_time
-    width = 0.5
+    # ERD
+    center_erd = event_time
+    width_erd = 0.5
     erd_depth = 0.6
+    gauss_erd = np.exp(-((t - center_erd)**2) / (2 * width_erd**2))
     
-    gaussian = np.exp(-((t - center)**2) / (2 * width**2))
-    envelope = envelope - (erd_depth * gaussian)
+    # ERS
+    center_ers = event_time + 1.5 
+    width_ers = 0.5
+    ers_height = 0.1
+    gauss_ers = np.exp(-((t - center_ers)**2) / (2 * width_ers**2))
+    
+    envelope = envelope - (erd_depth * gauss_erd) + (ers_height * gauss_ers)
     
     return envelope
 

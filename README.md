@@ -6,140 +6,98 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange.svg)](https://jupyter.org/)
 
-## Overview
-
-This project demonstrates the extraction of **Neural Manifolds**—low-dimensional topological subspaces where neural population activity evolves—from noisy, high-dimensional EEG data.
-
-Neural field potentials are dominated by **1/f background noise** (pink noise), often obscuring the task-relevant signals in specific oscillatory bands. This repository implements a complete data science pipeline to validate that by **standardizing (Z-scoring) spectral features**, unsupervised learning methods like Principal Component Analysis (PCA) can successfully identify signal covariance over noise variance. This allows for the recovery of the latent "butterfly" trajectory characteristic of motor cortex dynamics during reaching tasks.
+## 1. Abstract
+This project implements a complete data science pipeline to extract a low-dimensional topological subspace, known as a **Neural Manifold**, from noisy, high-dimensional electrophysiological data. By simulating the **Event-Related Desynchronization (ERD)** and **Synchronization (ERS)** characteristic of the motor cortex, we demonstrate that standardizing spectral features via Z-scoring, enables Principal Component Analysis (PCA) to recover latent dynamics, effectively separating signal covariance from the dominant $1/f$ background noise.
 
 ---
 
-## Neuroscience Background
+## 2. Neuroscience Background
 
-The simulation is grounded in established neurophysiology of the mammalian motor cortex.
+### 2.1 The Manifold Hypothesis
+The **Manifold Hypothesis** suggests that while the brain consists of billions of neurons, the neural activity related to specific tasks is constrained to a low-dimensional subspace. In the motor cortex, neural trajectories during reaching movements often exhibit rotational dynamics.
 
-### 1. The Idling Rhythm Hypothesis
-The primary motor cortex (M1) is not silent when at rest. Instead, large populations of neurons fire in synchrony, generating strong oscillatory electrical fields.
-* **Mu/Alpha Rhythm (8–13 Hz):** The dominant idling rhythm of the sensorimotor system.
-* **Beta Rhythm (13–30 Hz):** Associated with maintaining the current motor set (status quo).
+### 2.2 Motor Cortex Rhythms
+The primary motor cortex (M1) exhibits distinct oscillatory signatures:
+* **Alpha Rhythm (8–13 Hz):** The "idling" rhythm. High power indicates the motor cortex is at rest.
+* **Beta Rhythm (13–30 Hz):** Associated with maintaining the current motor set.
 
-### 2. Event-Related Desynchronization (ERD)
-When a movement is planned or executed, these synchronous populations "break apart" to process information independently. This results in a massive **drop in amplitude** (power) in the Alpha/Beta bands. This phenomenon is known as **ERD**.
-
-### 3. Event-Related Synchronization (ERS) / Beta Rebound
-Immediately after movement cessation, the cortex "resets" with an inhibitory rebound. The Beta power not only returns to baseline but briefly overshoots it. This is the **Post-Movement Beta Rebound**.
-
-### 4. Contralateral Lateralization
-The brain controls the body cross-wise.
-* **Left Hand Movement** $\rightarrow$ ERD in the **Right** Motor Cortex (Channel C4).
-* **Right Hand Movement** $\rightarrow$ ERD in the **Left** Motor Cortex (Channel C3).
+### 2.3 ERD/ERS Dynamics
+Movement execution follows a strict temporal pattern:
+1.  **Planning Phase:** A sharp reduction in Alpha/Beta power, reflecting the release of inhibition.
+2.  **Execution Phase:** Sustained desynchronization.
+3.  **Rebound Phase:** A post-movement surge in Beta power, reflecting active inhibition.
 
 ---
 
-## Mathematical Framework
+## 3. Mathematical Framework
 
-### 1. Signal Generation
-We model the raw voltage $V(t)$ for a given channel as a superposition of stochastic noise and deterministic oscillatory signals modulated by a task envelope.
+### 3.1 Signal Generation
+We model the continuous voltage signal $V_c(t)$ for channel $c$ as a superposition of a stochastic background process and deterministic oscillatory signals modulated by task envelopes.
 
-$$V(t) = N_{pink}(t) + A(t) \cdot \sin(2\pi f_{\alpha} t) + B(t) \cdot \sin(2\pi f_{\beta} t) + \epsilon(t)$$
+$$V_c(t) = \underbrace{N_{pink}(t)}_{\text{Background}} + \underbrace{\mathcal{E}_{task}(t) \cdot \left( A \sin(2\pi f_{\alpha} t) + B \sin(2\pi f_{\beta} t) \right)}_{\text{Motor Signal}} + \epsilon(t)$$
 
-Where:
-* $N_{pink}(t) \propto 1/f^{\gamma}$: Pink noise representing background synaptic activity (high power at low frequencies).
-* $A(t), B(t)$: Time-varying envelopes representing the cognitive state (Rest $\to$ ERD $\to$ ERS).
-* $\epsilon(t)$: Sensor white noise.
+Where $N_{pink}(t) \propto 1/f$ represents background synaptic activity and $\mathcal{E}_{task}(t)$ represents the cognitive state envelope.
 
-### 2. Spectral Analysis via STFT
-Since the signal is **non-stationary** (the frequency content changes over time), simple Fourier Transform (DFT) is insufficient. We use the **Short-Time Fourier Transform (STFT)** to map voltage to the time-frequency domain.
+### 3.2 Spectral Analysis
+Neural signals are **non-stationary**, meaning their frequency statistics change over time. We employ the **Short-Time Fourier Transform (STFT)** to map the time-series into a Time-Frequency representation.
 
-For a discrete signal $x[n]$ and window $w[n]$:
+For a discrete signal $x[n]$ sampled at frequency $f_s$, we apply a sliding window function $w[n]$ of length $L$ with a hop size $R$. The STFT at time frame $m$ and frequency bin $k$ is defined as:
 
-$$X(m, \omega) = \sum_{n=-\infty}^{\infty} x[n] w[n-mR] e^{-j\omega n}$$
+$$X[m, k] = \sum_{n=0}^{L-1} x[n + mR] \cdot w[n] \cdot e^{-j \frac{2\pi}{L} k n}$$
 
-This transforms our data dimensions from Time to Time-Frequency.
+The **Power Spectral Density (PSD)**, or spectrogram, is the squared magnitude of the complex coefficients:
 
-### 3. Feature Engineering
-We integrate the power spectral density (PSD) over specific neurophysiologically relevant bands to create features. For a band $b \in [\omega_{low}, \omega_{high}]$:
+$$S[m, k] = |X[m, k]|^2$$
 
-$$P_b[m] = \frac{1}{N_{bins}} \sum_{\omega=\omega_{low}}^{\omega_{high}} |X(m, \omega)|^2$$
+To extract neurophysiologically relevant features, we average the power over specific frequency bands $B = [k_{0}, k_{f}]$ such as $[8, 13]$ Hz for the $\alpha$ band:
 
-### 4. Standardization via Z-Scoring
-This is the **critical step**. EEG data follows a power law ($P \propto 1/f$), meaning Delta band variance ($\sigma^2_{\delta}$) is orders of magnitude larger than Beta band variance ($\sigma^2_{\beta}$).
-If we applied PCA directly, PC1 would purely capture the random Delta drift.
+$$P_{band}[m] = \frac{1}{N_k} \sum_{k=k_{0}}^{k_{f}} S[m, k]$$
 
-We standardize every feature column $j$:
-$$Z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}$$
-This forces $\sigma^2 = 1$ for all bands, converting the PCA problem from analyzing the **Covariance Matrix** (amplitude-driven) to the **Correlation Matrix** (synchrony-driven).
+This transforms our raw input tensor $\mathbf{X}_{raw} \in \mathbb{R}^{T}$ into a feature matrix $\mathbf{X}_{feat} \in \mathbb{R}^{M \times F}$, where $M$ is the number of time windows and $F$ is the number of frequency bands.
 
-### 5. Dimensionality Reduction via PCA
-We use Principal Component Analysis to find the neural manifold. PCA finds the eigenvectors (principal components) of the correlation matrix $C = Z^T Z$.
+### 3.3 Standardization
+EEG data follows a power law ($P \propto 1/f$), meaning low-frequency variance dominates the signal:
 
-$$C = V \Lambda V^T$$
+$$\sigma^2_{\delta} \gg \sigma^2_{\theta} \gg \sigma^2_{\alpha} \gg \sigma^2_{\beta}$$
 
-* **PC1:** Captures the shared ERD (movement state).
-* **PC2:** Captures the lateralization (Left vs. Right hand).
-* **PC3:** Captures the rotational dynamics (Rebound phase).
+Applying PCA directly to raw power values would result in PC1 merely tracking the random drift of the Delta band. To recover the information structure, namely the synchrony, rather than amplitude, we **standardize** the features column-wise via Z-scoring.
 
----
+Given a feature matrix $\mathbf{X} \in \mathbb{R}^{N \times F}$, where $N$ is total time points across all trials:
 
-## Pipeline & Data Dimensions
+$$\mathbf{Z}_{ij} = \frac{\mathbf{X}_{ij} - \mu_j}{\sigma_j}$$
 
-The data undergoes a sequence of transformations, reshaping the tensor at each step.
+Where $\mu_j$ and $\sigma_j$ are the mean and standard deviation of the $j$-th frequency band. This ensures all bands have unit variance ($\sigma^2=1$), effectively whitening the spectrum.
 
-### Step 1: Raw Data Generation
-We simulate 20 trials (10 Left, 10 Right) of 6 seconds each at 250 Hz.
-* **Input:** Simulation Parameters.
-* **Output Data Structure:** 3D Tensor.
-    $$X_{raw} \in \mathbb{R}^{N_{trials} \times N_{channels} \times N_{time}}$$
-    $$\text{Dimensions: } (20 \times 2 \times 1500)$$
+### 3.4 Dimensionality Reduction
+We identify the Neural Manifold using **Principal Component Analysis (PCA)** on the standardized features.
 
-### Step 2: Spectral Analysis
-We compute the STFT and average into 5 bands ($\delta, \theta, \alpha, \beta, \gamma$) per channel.
-* **Transformation:** Voltage ($V$) $\rightarrow$ Power ($dB$).
-* **Intermediate Tensor:**
-    $$X_{features} \in \mathbb{R}^{N_{trials} \times N_{channels} \times N_{bands} \times N_{windows}}$$
-    $$\text{Dimensions: } (20 \times 2 \times 5 \times 60)$$
-* **Flattening:** We combine channels and bands into a single "Feature Vector" of size 10 (2 channels $\times$ 5 bands).
-    $$X_{flat} \in \mathbb{R}^{N_{trials} \times N_{windows} \times N_{features}}$$
-    $$\text{Dimensions: } (20 \times 60 \times 10)$$
+1.  **Correlation Matrix**: We compute the covariance matrix of the standardized data $\mathbf{Z}$, which is equivalent to the correlation matrix of the original data $\mathbf{X}$:
 
-### Step 3: Manifold Decoding
-We stack all trials vertically to treat every time window as an independent observation of the brain state.
-* **Stacked Matrix:**
-    $$X_{stacked} \in \mathbb{R}^{N_{total\_samples} \times N_{features}}$$
-    $$\text{Dimensions: } (1200 \times 10)$$
-* **PCA Transformation:** We project this 10D space into a 3D latent space.
-    $$T = X_{stacked} \cdot W_{pca}$$
-    $$T \in \mathbb{R}^{1200 \times 3}$$
+    $$\mathbf{C} = \frac{1}{N-1} \mathbf{Z}^\top \mathbf{Z} \in \mathbb{R}^{F \times F}$$
+
+2.  **Eigendecomposition**: We solve for the eigenvalues $\lambda$ and eigenvectors $\mathbf{v}$:
+
+    $$\mathbf{C} \mathbf{v}_k = \lambda_k \mathbf{v}_k$$
+
+    Here, the eigenvectors $\mathbf{V} = [\mathbf{v}_1, \dots, \mathbf{v}_F]$ represent the **principal axes** of the neural manifold, and the eigenvalues $\lambda_k$ represent the variance explained by each axis.
+
+3.  **Projection**: The low-dimensional neural trajectory $\mathbf{T}$ is obtained by projecting the standardized data onto the top $d$ principal components:
+
+    $$\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d$$
+
+    $$\begin{bmatrix} t_{1,1} & \dots & t_{1,d} \\ \vdots & \ddots & \vdots \\ t_{N,1} & \dots & t_{N,d} \end{bmatrix} = \begin{bmatrix} z_{1,1} & \dots & z_{1,F} \\ \vdots & \ddots & \vdots \\ z_{N,1} & \dots & z_{N,F} \end{bmatrix} \cdot \begin{bmatrix} | & & | \\ \mathbf{v}_1 & \dots & \mathbf{v}_d \\ | & & | \end{bmatrix}$$
 
 ---
 
-## Project Structure
+## 4. Pipeline Architecture
 
-### Notebooks
-* **`notebooks/01_signal_generation.ipynb`**:
-    * *Goal*: Generates the synthetic dataset (20 trials, 2 channels).
-    * *Details*: Implements the random walk (Brownian noise) for Delta bands and the ERD envelopes for Alpha/Beta.
-* **`notebooks/02_spectral_analysis.ipynb`**:
-    * *Goal*: Performs STFT and extracts band-power features.
-    * *Details*: Reshapes the 3D raw tensor into the 2D feature matrix required for scikit-learn.
-* **`notebooks/03_manifold_decoding.ipynb`**:
-    * *Goal*: Applies Z-scoring and PCA to uncover latent dynamics.
-    * *Details*: Visualizes the 3D manifold, the covariance matrix, and the PCA loading vectors to validate the "Signal vs. Noise" separation.
-
-### Source Code
-* **`src/generation.py`**:
-    * Contains the physics engine for generating pink noise, artifacts, and motor-task modulation envelopes.
-* **`src/processing.py`**:
-    * Utility functions for signal processing, including STFT computation and band-power averaging.
-
-### Data Directory
-* `data/01_raw/`: Stores generated raw voltage time-series (`.npy`).
-* `data/02_features/`: Stores processed spectral feature matrices (`.npy`).
-* `data/03_results/`: Stores final PCA coordinates and manifold plots.
-
-### Configuration
-* `config.yaml`: Central configuration file for simulation parameters.
-* `requirements.txt`: List of Python dependencies.
+| Step | Process | Tensor Transformation | Dimensions (Example) |
+| :--- | :--- | :--- | :--- |
+| **1** | **Simulation** | `(Trials, Channels, Time)` | $(100, 2, 1500)$ |
+| **2** | **STFT** | `(Trials, Channels, Freqs, TimeWins)` | $(100, 2, 5, 60)$ |
+| **3** | **Feature Eng.** | `(Trials, TimeWins, Features)` | $(100, 60, 10)$ |
+| **4** | **Stacking** | `(TotalTimePoints, Features)` | $(6000, 10)$ |
+| **5** | **PCA** | `(TotalTimePoints, Components)` | $(6000, 3)$ |
 
 ---
 
