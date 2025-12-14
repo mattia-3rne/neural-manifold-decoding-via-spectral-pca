@@ -211,12 +211,10 @@ __marimo__/
 # ignoring data files
 data/01_raw/*
 data/02_features/*
-data/03_results/*
 
 # keeping data folders
 !data/01_raw/.gitkeep
 !data/02_features/.gitkeep
-!data/03_results/.gitkeep
 
 # Ignoring python cache
 __pycache__/
