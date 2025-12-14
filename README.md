@@ -83,7 +83,6 @@ $$\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d$$
 
 $$\begin{bmatrix} t_{1,1} & \dots & t_{1,d} \\ \vdots & \ddots & \vdots \\ t_{N,1} & \dots & t_{N,d} \end{bmatrix} = \begin{bmatrix} z_{1,1} & \dots & z_{1,F} \\ \vdots & \ddots & \vdots \\ z_{N,1} & \dots & z_{N,F} \end{bmatrix} \cdot \begin{bmatrix} | & & | \\ \mathbf{v}_1 & \dots & \mathbf{v}_d \\ | & & | \end{bmatrix}$$
 
-
 ---
 
 ## 4. Pipeline Architecture
