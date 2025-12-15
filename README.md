@@ -1,7 +1,7 @@
 # Neural Manifold Decoding from Synthetic EEG Data via Spectral PCA
 
 ## 1. Abstract
-This project implements a complete data science pipeline to extract a low-dimensional topological subspace, known as a **Neural Manifold**, from noisy, high-dimensional electrophysiological data. By simulating the **Event-Related Desynchronization (ERD)** and **Synchronization (ERS)** characteristic of the motor cortex, we demonstrate that standardizing spectral features via Z-scoring, enables Principal Component Analysis (PCA) to recover latent dynamics, effectively separating signal covariance from the dominant $1/f$ background noise.
+This project implements a complete data science pipeline to extract a low-dimensional topological subspace, known as a **Neural Manifold**, from noisy, high-dimensional electrophysiological data. By simulating the **Event-Related Desynchronization (ERD)** and **Synchronization (ERS)** characteristic of the motor cortex, we demonstrate that standardizing spectral features via Z-scoring, enables Principal Component Analysis (PCA) to recover latent dynamics, effectively separating signal covariance from the dominant background noise.
 
 ---
 
@@ -39,7 +39,7 @@ Here, $\eta_b(t)$ represents the stochastic noise component in band $b$, where $
 ### 3.2 Spectral Analysis
 Neural signals are **non-stationary**, meaning their frequency statistics change over time. We employ the **Short-Time Fourier Transform (STFT)** to map the time-series into a Time-Frequency representation.
 
-For a discrete signal $x[n]$ sampled at frequency $f_s$, we apply a sliding window function $w[n]$ of length $L$ with a hop size $R$. The STFT at time frame $m$ and frequency bin $k$ is defined as:
+For a discrete signal $x[n]$ sampled at a certain frequency, we apply a sliding window function $w[n]$ of length $L$ with a hop size $R$. The STFT at time frame $m$ and frequency bin $k$ is defined as:
 
 $$X[m, k] = \sum_{n=0}^{L-1} x[n + mR] \cdot w[n] \cdot e^{-j \frac{2\pi}{L} k n}$$
 
@@ -47,16 +47,15 @@ The **Power Spectral Density (PSD)**, or spectrogram, is the squared magnitude o
 
 $$S[m, k] = |X[m, k]|^2$$
 
-To extract neurophysiologically relevant features, we average the power over specific frequency bands $B = [k_{0}, k_{f}]$ such as $[8, 13]$ Hz for the $\alpha$ band:
+To extract neurophysiologically relevant features, we average the power over specific frequency bands $b = [k_{0}, k_{end}]$:
 
-$$P_{band}[m] = \frac{1}{N_k} \sum_{k=k_{0}}^{k_{f}} S[m, k]$$
+$$P_{b}[m] = \frac{1}{N_k} \sum_{k=k_{0}}^{k_{end}} S[m, k]$$
 
-This transforms our raw input tensor $\mathbf{X}_{raw} \in \mathbb{R}^{T}$ into a feature matrix $\mathbf{X}_{feat} \in \mathbb{R}^{M \times F}$, where $M$ is the number of time windows and $F$ is the number of frequency bands.
 
 ### 3.3 Standardization
 EEG data follows a power law ($P \propto 1/f$), meaning low-frequency variance dominates the signal:
 
-$$\sigma^2_{\delta} \gg \sigma^2_{\theta} \gg \sigma^2_{\alpha} \gg \sigma^2_{\beta}$$
+$$\sigma^2_{\delta} \gg \sigma^2_{\theta} \gg \sigma^2_{\alpha} \gg \sigma^2_{\beta} \gg \sigma^2_{\gamma}$$
 
 Applying PCA directly to raw power values would result in PC1 merely tracking the random drift of the Delta band. To recover the information structure, namely the synchrony, rather than amplitude, we **standardize** the features column-wise via Z-scoring.
 
