@@ -6,7 +6,7 @@ def compute_band_power(signal, srate, bands):
     # STFT parameters
     window_sec = 0.5
     nperseg = int(window_sec * srate)
-    noverlap = int (nperseg * 0.8)
+    noverlap = nperseg - 205
     f, t, Zxx = stft(signal, fs=srate, nperseg=nperseg, noverlap=noverlap)
     
     # Calculating power from complex voltage
