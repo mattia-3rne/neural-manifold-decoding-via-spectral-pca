@@ -6,8 +6,8 @@ def compute_band_power(signal, srate, bands):
     # STFT parameters
     window_sec = 0.5
     nperseg = int(window_sec * srate)
-    noverlap = nperseg - 205
-    f, t, Zxx = stft(signal, fs=srate, nperseg=nperseg, noverlap=noverlap)
+    noverlap = max(0, nperseg - 192)
+    f, t, Zxx = stft(signal, fs=srate, nperseg=nperseg, noverlap=noverlap, boundary='even')
     
     # Calculating power from complex voltage
     power = np.abs(Zxx)**2
@@ -23,4 +23,4 @@ def compute_band_power(signal, srate, bands):
         avg_power = np.mean(power[idx, :], axis=0)
         band_powers.append(avg_power)
         
-    return np.array(band_powers)
+    return np.array(band_powers)[:, 2:-2]
