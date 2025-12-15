@@ -12,7 +12,7 @@ def compute_band_power(signal, srate, bands):
     # Calculating power from complex voltage
     power = np.abs(Zxx)**2
     
-    # Average power into bands
+    # Averaging power into bands
     band_powers = []
     
     for band_name, (low, high) in bands.items():
