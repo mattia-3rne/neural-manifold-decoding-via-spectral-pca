@@ -26,11 +26,15 @@ Movement execution follows a strict temporal pattern:
 ## 3. Mathematical Framework
 
 ### 3.1 Signal Generation
-We model the continuous voltage signal $V_c(t)$ for channel $c$ as a superposition of a stochastic background process and deterministic oscillatory signals modulated by task envelopes.
+We model the continuous voltage signal $V_c(t)$ for channel $c$ as a superposition of a stochastic background process and deterministic oscillatory signals modulated by the task envelope $\mathcal{E}_{task}(t)$.
 
 $$V_c(t) = \underbrace{N_{pink}(t)}_{\text{Background}} + \underbrace{\mathcal{E}_{task}(t) \cdot \left( A \sin(2\pi f_{\alpha} t) + B \sin(2\pi f_{\beta} t) \right)}_{\text{Motor Signal}} + \epsilon(t)$$
 
-Where $N_{pink}(t) \propto 1/f$ represents background synaptic activity and $\mathcal{E}_{task}(t)$ represents the cognitive state envelope.
+Where $N_{pink}(t)  \propto 1/f$ represents the background activity. This noise can be expressed as the sum of activity across all frequency bands $[\delta, \theta, \alpha, \beta, \gamma]$, heavily dominated by the lower frequencies:
+
+$$N_{pink}(t) = \eta_{\delta}(t) + \eta_{\theta}(t) + \eta_{\alpha}(t) + \eta_{\beta}(t) + \eta_{\gamma}(t)$$
+
+Here, $\eta_b(t)$ represents the stochastic noise component in band $b$, where $A(\eta_{\delta}) \gg A(\eta_{\gamma})$.
 
 ### 3.2 Spectral Analysis
 Neural signals are **non-stationary**, meaning their frequency statistics change over time. We employ the **Short-Time Fourier Transform (STFT)** to map the time-series into a Time-Frequency representation.
@@ -89,14 +93,12 @@ $$\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d$$
 
 ## 4. Pipeline Architecture
 
-| Step | Process | Tensor Transformation | Dimensions (Example) |
+| Step | Process | Tensor Transformation | Dimensions |
 | :--- | :--- | :--- | :--- |
-| **1** | **Simulation** | `(Trials, Channels, Time)` | $(100, 2, 1500)$ |
-| **2** | **STFT** | `(Trials, Channels, Freqs, TimeWins)` | $(100, 2, 5, 60)$ |
-| **3** | **Feature Eng.** | `(Trials, TimeWins, Features)` | $(100, 60, 10)$ |
-| **4** | **Stacking** | `(TotalTimePoints, Features)` | $(6000, 10)$ |
-| **5** | **PCA** | `(TotalTimePoints, Components)` | $(6000, 3)$ |
-
+| **1** | **Signal Generation** | `(Trials, Channels, Time)` | $(100, 2, 12000)$ |
+| **2** | **Spectral Analysis** | `(Trials, Windows, Features)` | $(100, 60, 10)$ |
+| **3** | **Standardization** | `(TotalTimePoints, Features)` | $(6000, 10)$ |
+| **4** | **Dimensionality Reduction** | `(Trials, Windows, Features)` | $(100, 60, 3)$ |
 ---
 
 ## Getting Started
@@ -122,3 +124,20 @@ $$\mathbf{T} = \mathbf{Z} \cdot \mathbf{W}_d$$
     1.  `01_signal_generation.ipynb`
     2.  `02_spectral_analysis.ipynb`
     3.  `03_manifold_decoding.ipynb`
+---
+
+## Project Structure
+
+### Notebooks
+* `notebooks/01_signal_generation.ipynb`: Generates the synthetic EEG data.
+* `notebooks/02_spectral_analysis.ipynb`: Performs the spectral analysis.
+* `notebooks/03_manifold_decoding.ipynb`: Applies Z-scoring and PCA.
+
+### Source Code
+* `src/generation.py`: Physics engine for simulating the non-stationary signals.
+* `src/processing.py`: Utilities for STFT and spectral power integration.
+
+### Configuration & Data
+* `requirements.txt`: List of the Python dependencies.
+* `config.yaml`: Central parameter configuration.
+* `data/`: Directory structure for storing assets.
