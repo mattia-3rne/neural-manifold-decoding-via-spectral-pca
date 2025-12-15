@@ -47,9 +47,9 @@ The **Power Spectral Density (PSD)**, or spectrogram, is the squared magnitude o
 
 $$S[m, k] = |X[m, k]|^2$$
 
-To extract neurophysiologically relevant features, we average the power over specific frequency bands $b = [k_{0}, k_{end}]$:
+To extract neurophysiologically relevant features, we average the power over specific frequency bands $b = [k_{0}, k_{f}]$:
 
-$$P_{b}[m] = \frac{1}{N_k} \sum_{k=k_{0}}^{k_{end}} S[m, k]$$
+$$P_{b}[m] = \frac{1}{N_k} \sum_{k=k_{0}}^{k_{f}} S[m, k]$$
 
 
 ### 3.3 Standardization
